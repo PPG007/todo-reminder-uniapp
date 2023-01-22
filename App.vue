@@ -3,7 +3,7 @@
 		onLaunch: function() {
 			const token = uni.getStorageSync('token')
 			uni.$u.http.setConfig((config) => {
-				config.baseURL = 'http://172.25.255.111:8080';
+				config.baseURL = 'http://101.42.32.192:80';
 				config.responseType = 'json';
 				config.sslVerify = false;
 				config.header = {

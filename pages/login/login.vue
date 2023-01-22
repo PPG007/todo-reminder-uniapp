@@ -45,6 +45,7 @@
 						password: this.password
 					});
 					uni.setStorageSync('token', resp.data.token);
+					uni.setStorageSync('userId', this.userId);
 					uni.$u.http.setConfig((config) => {
 						config.header = {
 							'x-access-token': resp.data.token,
@@ -66,9 +67,10 @@
 					return
 				}
 				try {
-					Request.getPassword(this.userId);
+					await Request.getPassword(this.userId);
 				} catch(e) {
-					console.log(e);
+					this.showToast('账号不存在', 'error')
+					return
 				}
 			},
 			showToast(message, type) {

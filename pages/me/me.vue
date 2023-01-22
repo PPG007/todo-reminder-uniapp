@@ -23,8 +23,12 @@
 				try{
 					uni.clearStorageSync();
 				} catch (e) {
-					
+					return;
 				}
+				uni.$u.http.setConfig((config) => {
+					config.header = {}
+					return config;
+				})
 				uni.reLaunch({
 					url: '/pages/login/login'
 				})
@@ -33,7 +37,11 @@
 		computed: {
 			userId: {
 				get() {
-					return '123';
+					try {
+						return uni.getStorageSync('userId');
+					} catch (e) {
+						return '获取账号错误'
+					}
 				}
 			}
 		}
