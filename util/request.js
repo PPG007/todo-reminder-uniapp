@@ -57,9 +57,21 @@ export default class Request {
 		return uni.$u.http.get(`/app/${version}/url`);
 	}
 	
-	static download = (url) => {
-		return uni.downloadFile({
-			url: url,
+	static download = (url, progressFunc) => {
+		return new Promise((resolve, reject) => {
+			const task = uni.downloadFile({
+				url: url,
+				complete: (res) => {
+					if (res.statusCode == 200) {
+						resolve(res.tempFilePath);
+					} else {
+						reject(res.statusCode);
+					}
+				}
+			});
+			task.onProgressUpdate((res) => {
+				progressFunc(res.progress);
+			});
 		});
 	}
 }

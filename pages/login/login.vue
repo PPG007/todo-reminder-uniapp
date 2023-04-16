@@ -1,6 +1,9 @@
 <template>
 	<view>
 		<u-toast ref="uToast"></u-toast>
+		<u-modal :show="showModal" :showConfirmButton="false" title="下载中">
+			<u-line-progress :percentage="progress"></u-line-progress>
+		</u-modal>
 		<u-loading-page :loading="loading"></u-loading-page>
 		<u-form labelAlign="center" labelWidth="auto" labelPosition="top" class="login">
 			<u-form-item label="账号" :required="true">
@@ -27,7 +30,9 @@
 			return {
 				userId: '',
 				password: '',
-				loading: false
+				loading: false,
+				showModal: false,
+				progress: 0,
 			}
 		},
 		methods: {
@@ -101,16 +106,22 @@
 					let resp = await Request.getLatestAppVersion();
 					if (resp.data.version != Constant.getAppVersion()) {
 						this.showToast('发现新版本', 'info');
+						this.showModal = true;
+						this.progress = 0;
 					} else{
 						this.showToast('已是最新版本', 'info');
 						return;
 					}
 					resp = await Request.getAppPackage(resp.data.version);
-					resp = await Request.download(resp.data.url);
-					plus.runtime.install(resp[1].tempFilePath);
+					resp = await Request.download(resp.data.url, this.updateProgress);
+					plus.runtime.install(resp);
 				} catch(e) {
 					this.showToast('检查更新失败', 'error');
 				}
+				this.showModal = false;
+			},
+			updateProgress(progress) {
+				this.progress = progress;
 			}
 		}
 	}
