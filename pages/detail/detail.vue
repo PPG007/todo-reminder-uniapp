@@ -3,7 +3,7 @@
 		<u-toast ref="detailToast"></u-toast>
 		<u-form :model="detail" labelAlign="center" labelWidth="auto">
 			<u-form-item label="内容" prop="content">
-				<u-textarea v-model="detail.content" :count="true" maxlength="20" :autoHeight="true" border="bottom">
+				<u-textarea v-model="detail.content" :count="true" :autoHeight="true" border="bottom">
 				</u-textarea>
 			</u-form-item>
 			<u-form-item label="提醒设置" prop="needRemind">
@@ -32,6 +32,14 @@
 			<u-form-item>
 				<u-button type="primary" @click="onSubmit" :disabled="detail.content === ''">提交</u-button>
 			</u-form-item>
+			<u-upload
+				:multiple="true"
+				:fileList="fileList"
+				:maxCount="10"
+				@delete="onDelete"
+				@afterRead="onAfterRead"
+				:previewFullImage="true"
+			></u-upload>
 		</u-form>
 		<u-datetime-picker :show="showDatetimePicker" :closeOnClickOverlay="true" v-model="detail.remindAt"
 			@cancel="onDateTimePickerClosed" @confirm="onDateTimePickerClosed" @close="onDateTimePickerClosed" :minDate="minDate">
@@ -60,10 +68,12 @@
 					isRepeatable: false,
 					repeatType: 'daily',
 					repeatDateOffset: 1,
-					todoId: ''
+					todoId: '',
+					images: [],
 				},
 				showDatetimePicker: false,
-				showRepeatTypePicker: false
+				showRepeatTypePicker: false,
+				fileList: [],
 			}
 		},
 		methods: {
@@ -103,6 +113,7 @@
 					try {
 						const resp = await Request.getDetail(param.id);
 						this.detail = resp.data;
+						this.formatFileList();
 					} catch(e) {
 						this.showToast('未知错误', 'error')
 					}
@@ -126,14 +137,13 @@
 					repeatDateOffset: this.detail.repeatDateOffset,
 					remindAt: moment(this.detail.remindAt).toISOString(),
 					id: this.detail.todoId,
+					images: this.formatImageNames(),
 				};
-				console.log(req);
 				try {
 					await Request.createTodo(req);
 					this.showToast('操作成功', 'success')
 					uni.navigateBack();
 				} catch (e) {
-					console.log(e);
 					this.showToast('操作失败', 'error')
 				}
 			},
@@ -143,6 +153,67 @@
 					type: type,
 					duration: 1000
 				})
+			},
+			async onAfterRead(event, error) {
+				let files = [].concat(event.file);
+				files.map((file) => {
+					this.fileList.push({
+						...file,
+						status: 'uploading',
+						message: '上传中',
+					});
+				})
+				files.map(async (file) => {
+					try {
+						const resp = await Request.uploadFile(file.url, this.getFileName(file.url));
+						this.updateFileUploadStatus(file.url, resp.data.url, resp.data.name, 'success');
+					} catch (e) {
+						this.showToast('上传失败', 'error')
+						this.updateFileUploadStatus(file.url, '', 'failed');
+					}
+				})
+			},
+			async onDelete(event, error) {
+				this.fileList.splice(event.index, 1);
+			},
+			getFileName(path) {
+				const arr = path.split("/");
+				return arr[arr.length-1]
+			},
+			updateFileUploadStatus(filePath, fileUrl, fileName, status) {
+				const newList = [];
+				this.fileList.forEach(file => {
+					if (file.url == filePath) {
+						file.message = '';
+						file.status = status;
+						file.name = fileName;
+						if (fileUrl != '') {
+							file.url = fileUrl;
+						}
+						if (status == 'failed') {
+							file.message = '上传失败';
+						}
+					}
+					newList.push(file);
+				})
+				this.fileList = newList;
+			},
+			formatFileList() {
+				this.fileList = [];
+				this.detail.images.forEach(image => {
+					this.fileList.push({
+						name: image.name,
+						url: image.url,
+						type: 'image',
+					})
+				});
+			},
+			formatImageNames() {
+				let result = [];
+				this.fileList.forEach(file => {
+					result.push(file.name);
+				})
+				return result;
 			}
 		},
 		computed: {

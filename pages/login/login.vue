@@ -21,6 +21,7 @@
 
 <script>
 	import Request from '@/util/request.js';
+	import Constant from '@/util/constant.js';
 	export default {
 		data() {
 			return {
@@ -83,6 +84,7 @@
 			async onReady() {
 				this.loading = true;
 				try {
+					await this.updateApp();
 					await Request.validToken();
 				} catch(e) {
 					this.loading = false
@@ -93,6 +95,22 @@
 				uni.switchTab({
 					url: '../todoList/todoList'
 				})
+			},
+			async updateApp() {
+				try {
+					let resp = await Request.getLatestAppVersion();
+					if (resp.data.version != Constant.getAppVersion()) {
+						this.showToast('发现新版本', 'info');
+					} else{
+						this.showToast('已是最新版本', 'info');
+						return;
+					}
+					resp = await Request.getAppPackage(resp.data.version);
+					resp = await Request.download(resp.data.url);
+					plus.runtime.install(resp[1].tempFilePath);
+				} catch(e) {
+					this.showToast('检查更新失败', 'error');
+				}
 			}
 		}
 	}

@@ -2,11 +2,13 @@
 	<view class="u-page">
 		<u-toast ref="doneListToast"></u-toast>
 		<u-list showScrollbar>
+			<u-skeleton :rows="perPage" :loading="isLoading" :rowsHeight="40" :title="false"></u-skeleton>
 			<u-list-item v-for="item in doneRecords" :key="item.id">
 				<u-cell :title="item.content" @click="onClickDoneRecord(item)" :label="renderLabel(item.doneAt, '完成于')" :value="renderRemindAt(item)">
 					<u-button slot="icon" @click.native.stop="onUndo(item.id)" size="mini" type="primary" shape="circle">undo</u-button>
 				</u-cell>
 			</u-list-item>
+			<u-loadmore :status="loadStatus" :line="true" :nomoreText="noMoreText" :loadmoreText="loadMoreText" :loadingText="loadingText"  @loadmore="loadMore"/>
 		</u-list>
 	</view>
 </template>
@@ -18,24 +20,22 @@
 		data() {
 			return {
 				doneRecords: [],
+				total: 0,
+				page: 1,
+				perPage: 10,
+				loadStatus: 'loadmore',
+				loadMoreText: '点击加载更多',
+				noMoreText: '没有更多了',
+				loadingText: '加载中',
+				isLoading: false,
 			}
 		},
 		methods: {
 			async onUndo(id) {
 				try {
 					await Request.undo(id);
-					const resp = await Request.fetchRecords({
-						hasBeenDone: true,
-						listCondition: {
-							orderBy: ['-_id'],
-							page: 1,
-							perPage: 100,
-						}
-					});
-					console.log(resp);
-					this.doneRecords = resp.data.items;
+					await this.init();
 				} catch (e) {
-					console.log(e);
 					this.showToast('未知错误', 'error')
 					return
 				}
@@ -48,8 +48,58 @@
 					duration: 1000,
 				})
 			},
-			loadMore() {
-				console.log('more');
+			async init() {
+				this.page = 1;
+				this.doneRecords = [];
+				this.total = 0;
+				this.isLoading = true;
+				try {
+					const resp = await Request.fetchRecords({
+						hasBeenDone: true,
+						listCondition: {
+							orderBy: ['-_id'],
+							page: this.page,
+							perPage: this.perPage,
+						}
+					});
+					this.doneRecords = resp.data.items;
+					this.total = resp.data.total;
+				} catch (e) {
+					this.showToast('未知错误', 'error')
+					return
+				} finally {
+					this.isLoading = false;
+				}
+			},
+			async loadMore() {
+				if (this.isLoading) {
+					return;
+				}
+				this.loadStatus = 'loading';
+				if (this.doneRecords.length >= this.total) {
+					this.loadStatus = 'nomore';
+					return;
+				}
+				try {
+					const resp = await Request.fetchRecords({
+						hasBeenDone: true,
+						listCondition: {
+							orderBy: ['-_id'],
+							page: this.page+1,
+							perPage: this.perPage,
+						}
+					});
+					this.doneRecords.push(...resp.data.items);
+					if (this.doneRecords.length >= this.total) {
+						this.loadStatus = 'nomore';
+					}
+					this.page++;
+				} catch (e) {
+					this.showToast('未知错误', 'error')
+					return
+				} finally {
+					this.loadStatus = 'loadmore';
+				}
 			},
 			onClickDoneRecord(record) {
 				uni.navigateTo({
@@ -72,20 +122,7 @@
 				return this.renderLabel(record.remindAt, '')
 			},
 			async onShow() {
-				try {
-					const resp = await Request.fetchRecords({
-						hasBeenDone: true,
-						listCondition: {
-							orderBy: ['-_id'],
-							page: 1,
-							perPage: 100,
-						}
-					});
-					this.doneRecords = resp.data.items;
-				} catch (e) {
-					this.showToast('未知错误', 'error')
-					return
-				}
+				await this.init();
 			},
 			showToast(message, type) {
 				this.$refs.doneListToast.show({
