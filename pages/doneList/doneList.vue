@@ -8,7 +8,7 @@
 					<u-button slot="icon" @click.native.stop="onUndo(item.id)" size="mini" type="primary" shape="circle">undo</u-button>
 				</u-cell>
 			</u-list-item>
-			<u-loadmore :status="loadStatus" :line="true" :nomoreText="noMoreText" :loadmoreText="loadMoreText" :loadingText="loadingText"  @loadmore="loadMore"/>
+			<u-loadmore :status="loadStatus" :line="true" :nomoreText="noMoreText" :loadmoreText="loadMoreText" :loadingText="loadingText" @loadmore="loadMore"/>
 		</u-list>
 	</view>
 </template>

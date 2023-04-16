@@ -168,7 +168,7 @@
 						const resp = await Request.uploadFile(file.url, this.getFileName(file.url));
 						this.updateFileUploadStatus(file.url, resp.data.url, resp.data.name, 'success');
 					} catch (e) {
-						this.showToast('上传失败', 'error')
+						this.showToast(`上传失败, ${e.message}`, 'error')
 						this.updateFileUploadStatus(file.url, '', 'failed');
 					}
 				})

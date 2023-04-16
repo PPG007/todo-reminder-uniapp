@@ -1,7 +1,7 @@
 export default class Constant {
 	
 	static getAppVersion = () => {
-		return 'v2.2';
+		return 'v2.3';
 	}
 	
 	static getServer = () => {
