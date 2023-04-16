@@ -108,7 +108,7 @@
 					return '';
 				}
 				let formattedString = '';
-				if (moment().diff(record.remindAt, 'years') === 0) {
+				if (moment().year() == moment(record.remindAt).year()) {
 					formattedString = moment(record.remindAt).format('MM-DD HH:mm');
 				} else {
 					formattedString = moment(record.remindAt).format('YYYY-MM-DD HH:mm');

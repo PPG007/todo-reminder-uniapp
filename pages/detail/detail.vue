@@ -191,7 +191,7 @@
 							file.url = fileUrl;
 						}
 						if (status == 'failed') {
-							file.message = '上传失败';
+							return;
 						}
 					}
 					newList.push(file);
