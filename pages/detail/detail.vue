@@ -169,7 +169,7 @@
 						this.updateFileUploadStatus(file.url, resp.data.url, resp.data.name, 'success');
 					} catch (e) {
 						this.showToast('上传失败', 'error')
-						this.updateFileUploadStatus(file.url, '', 'failed');
+						this.updateFileUploadStatus(file.url, '', '', 'failed');
 					}
 				})
 			},
