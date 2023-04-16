@@ -35,4 +35,31 @@ export default class Request {
 	static validToken = () => {
 		return uni.$u.http.post('/user/validToken')
 	}
+	
+	static uploadFile = (filePath, fileName) => {
+		return uni.$u.http.upload('/todos/object/uploadProxy', {
+			filePath: filePath,
+			params: {
+				fileName: fileName,
+			}
+		});
+	}
+	
+	static getFileUrl = (fileName) => {
+		return uni.$u.http.get(`/todos/object/${fileName}`)
+	}
+	
+	static getLatestAppVersion = () => {
+		return uni.$u.http.get('/app/latest');
+	}
+	
+	static getAppPackage = (version) => {
+		return uni.$u.http.get(`/app/${version}/url`);
+	}
+	
+	static download = (url) => {
+		return uni.downloadFile({
+			url: url,
+		});
+	}
 }

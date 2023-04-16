@@ -1,18 +1,17 @@
 <script>
+	import Constant from '@/util/constant.js';
 	export default {
 		onLaunch: function() {
 			const token = uni.getStorageSync('token')
 			uni.$u.http.setConfig((config) => {
-				config.baseURL = 'http://101.42.32.192:80';
+				config.baseURL = Constant.getServer();
 				config.responseType = 'json';
 				config.sslVerify = false;
 				config.header = {
 					'x-access-token': token,
 				}
 				return config;
-			})
-			
-			
+			});
 		},
 		onShow: function() {
 		

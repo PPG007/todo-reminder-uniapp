@@ -2,12 +2,15 @@
 	<view>
 		<u-toast ref="todoListToast"></u-toast>
 		<u-modal :show="showModal" title="注意" content="确定删除吗？" @confirm="doDeleteTodo"></u-modal>
-		<view class="add-new-button">
-			<u-button @click="onClickAddNew", type="primary" :plain="true">新增待办</u-button>
-		</view>
+		<u-sticky bgColor="#ffffff">
+			<view class="add-new-button">
+				<u-button @click="onClickAddNew", type="primary" :plain="true">新增待办</u-button>
+			</view>
+			<u-divider text="分割线" :dot="true"></u-divider>
+		</u-sticky>
 		
-		<u-divider text="分割线" :dot="true"></u-divider>
 		<u-list showScrollbar class="content">
+			<u-skeleton :rows="perPage" :loading="isLoading" :rowsHeight="40" :title="false"></u-skeleton>
 			<u-list-item v-for="item in todoList" :key="item.id">
 				<u-cell :title="item.content" @click="onClickTodoItem(item)">
 					<u-text slot="value" :type="getLabelType(item)" :text="renderLabel(item)"></u-text>
@@ -16,6 +19,7 @@
 					<u-icon name="close" slot="right-icon" @click.native.stop="onDeleteTodo(item)" label="删除" size="10px" labelSize="10px"></u-icon>
 				</u-cell>
 			</u-list-item>
+			<u-loadmore :status="loadStatus" :line="true" :nomoreText="noMoreText" :loadmoreText="loadMoreText" :loadingText="loadingText"  @loadmore="loadMore"/>
 		</u-list>
 	</view>
 </template>
@@ -29,7 +33,15 @@
 			return {
 				todoList: [],
 				showModal: false,
-				toDeleteRecord: {}
+				toDeleteRecord: {},
+				page: 1, 
+				perPage: 10,
+				loadStatus: 'loadmore',
+				loadMoreText: '点击加载更多',
+				noMoreText: '没有更多了',
+				loadingText: '加载中',
+				isLoading: false,
+				total: 0,
 			}
 		},
 		methods: {
@@ -47,8 +59,8 @@
 						hasBeenDone: false,
 						listCondition: {
 							orderBy: ['-_id'],
-							page: 1,
-							perPage: 100,
+							page: this.page,
+							perPage: this.perPage,
 						}
 					});
 					this.todoList = resp.data.items;
@@ -57,8 +69,34 @@
 					return
 				}
 			},
-			loadMore() {
-				console.log('more');
+			async loadMore() {
+				if (this.isLoading) {
+					return;
+				}
+				this.loadStatus = 'loading';
+				if (this.todoList.length >= this.total) {
+					this.loadStatus = 'nomore';
+					return;
+				}
+				try {
+					const resp = await Request.fetchRecords({
+						listCondition: {
+							orderBy: ['-_id'],
+							page: this.page+1,
+							perPage: this.perPage,
+						}
+					});
+					this.todoList.push(...resp.data.items);
+					if (this.todoList.length >= this.total) {
+						this.loadStatus = 'nomore';
+					}
+					this.page++;
+				} catch (e) {
+					this.showToast('未知错误', 'error')
+					return
+				} finally {
+					this.loadStatus = 'loadmore';
+				}
 			},
 			onClickTodoItem(record) {
 				uni.navigateTo({
@@ -118,35 +156,14 @@
 				this.showModal = false;
 				try {
 					await Request.deleteTodo(this.toDeleteRecord.todoId);
-					const resp = await Request.fetchRecords({
-						hasBeenDone: false,
-						listCondition: {
-							orderBy: ['-_id'],
-							page: 1,
-							perPage: 100,
-						}
-					});
-					this.todoList = resp.data.items;
+					await this.init();
 				} catch(e) {
 					this.showToast('未知错误', 'error')
 				}
 				this.toDeleteRecord = {};
 			},
 			async onShow() {
-				try {
-					const resp = await Request.fetchRecords({
-						hasBeenDone: false,
-						listCondition: {
-							orderBy: ['-_id'],
-							page: 1,
-							perPage: 100,
-						}
-					});
-					this.todoList = resp.data.items;
-				} catch (e) {
-					this.showToast('未知错误', 'error')
-					return
-				}
+				await this.init();
 			},
 			showToast(message, type) {
 				this.$refs.todoListToast.show({
@@ -154,6 +171,28 @@
 					type: type,
 					duration: 1000
 				})
+			},
+			async init() {
+				this.isLoading = true;
+				this.page = 1;
+				this.todoList = [];
+				try {
+					const resp = await Request.fetchRecords({
+						hasBeenDone: false,
+						listCondition: {
+							orderBy: ['-_id'],
+							page: this.page,
+							perPage: this.perPage,
+						}
+					});
+					this.todoList = resp.data.items;
+					this.total = resp.data.total;
+				} catch (e) {
+					this.showToast('未知错误', 'error')
+					return
+				} finally {
+					this.isLoading = false;
+				}
 			}
 		}
 	}
