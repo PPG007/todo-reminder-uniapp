@@ -12,7 +12,7 @@
 		<u-list showScrollbar class="content">
 			<u-skeleton :rows="perPage" :loading="isLoading" :rowsHeight="40" :title="false"></u-skeleton>
 			<u-list-item v-for="item in todoList" :key="item.id">
-				<u-cell :title="item.content" @click="onClickTodoItem(item)">
+				<u-cell :title="formatContent(item.content)" @click="onClickTodoItem(item)">
 					<u-text slot="value" :type="getLabelType(item)" :text="renderLabel(item)"></u-text>
 					<u-text slot="label" type="primary" :text="renderLabelText(item)"></u-text>
 					<u-button slot="icon" @click.native.stop="onDone(item.id)" size="mini" type="primary" shape="circle">done</u-button>
@@ -36,6 +36,7 @@
 				toDeleteRecord: {},
 				page: 1, 
 				perPage: 10,
+				orderBy: ['-createdAt'],
 				loadStatus: 'loadmore',
 				loadMoreText: '点击加载更多',
 				noMoreText: '没有更多了',
@@ -58,7 +59,7 @@
 					const resp = await Request.fetchRecords({
 						hasBeenDone: false,
 						listCondition: {
-							orderBy: ['-_id'],
+							orderBy: this.orderBy,
 							page: this.page,
 							perPage: this.perPage,
 						}
@@ -81,7 +82,7 @@
 				try {
 					const resp = await Request.fetchRecords({
 						listCondition: {
-							orderBy: ['-_id'],
+							orderBy: this.orderBy,
 							page: this.page+1,
 							perPage: this.perPage,
 						}
@@ -180,7 +181,7 @@
 					const resp = await Request.fetchRecords({
 						hasBeenDone: false,
 						listCondition: {
-							orderBy: ['-_id'],
+							orderBy: this.orderBy,
 							page: this.page,
 							perPage: this.perPage,
 						}
@@ -193,6 +194,13 @@
 				} finally {
 					this.isLoading = false;
 				}
+			},
+			formatContent(content) {
+				const sub = content.substr(0, 10);
+				if (sub == content) {
+					return sub;
+				}
+				return `${sub}...`;
 			}
 		}
 	}

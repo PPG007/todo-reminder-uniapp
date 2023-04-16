@@ -4,7 +4,7 @@
 		<u-list showScrollbar>
 			<u-skeleton :rows="perPage" :loading="isLoading" :rowsHeight="40" :title="false"></u-skeleton>
 			<u-list-item v-for="item in doneRecords" :key="item.id">
-				<u-cell :title="item.content" @click="onClickDoneRecord(item)" :label="renderLabel(item.doneAt, '完成于')" :value="renderRemindAt(item)">
+				<u-cell :title="formatContent(item.content)" @click="onClickDoneRecord(item)" :label="renderLabel(item.doneAt, '完成于')" :value="renderRemindAt(item)">
 					<u-button slot="icon" @click.native.stop="onUndo(item.id)" size="mini" type="primary" shape="circle">undo</u-button>
 				</u-cell>
 			</u-list-item>
@@ -23,6 +23,7 @@
 				total: 0,
 				page: 1,
 				perPage: 10,
+				orderBy: ['-createdAt'],
 				loadStatus: 'loadmore',
 				loadMoreText: '点击加载更多',
 				noMoreText: '没有更多了',
@@ -57,7 +58,7 @@
 					const resp = await Request.fetchRecords({
 						hasBeenDone: true,
 						listCondition: {
-							orderBy: ['-_id'],
+							orderBy: this.orderBy,
 							page: this.page,
 							perPage: this.perPage,
 						}
@@ -84,7 +85,7 @@
 					const resp = await Request.fetchRecords({
 						hasBeenDone: true,
 						listCondition: {
-							orderBy: ['-_id'],
+							orderBy: this.orderBy,
 							page: this.page+1,
 							perPage: this.perPage,
 						}
@@ -130,6 +131,13 @@
 					type: type,
 					duration: 1000
 				})
+			},
+			formatContent(content) {
+				const sub = content.substr(0, 10);
+				if (sub == content) {
+					return sub;
+				}
+				return `${sub}...`;
 			}
 		}
 	}
