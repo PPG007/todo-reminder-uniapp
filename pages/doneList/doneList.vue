@@ -108,7 +108,7 @@
 			},
 			renderLabel(t, prefix) {
 				let formattedString = '';
-				if (moment().diff(t, 'years') === 0) {
+				if (moment().year() == moment(t).year()) {
 					formattedString = moment(t).format('MM-DD HH:mm');
 				} else {
 					formattedString = moment(t).format('YYYY-MM-DD HH:mm');
